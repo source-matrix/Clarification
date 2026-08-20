@@ -65,7 +65,8 @@ function M.enhance_ai(command_name, input, output, realesrgan_weights, gfpgan_we
     output,
     "--realesrgan-weights", realesrgan_weights,
     "--gfpgan-weights", gfpgan_weights,
-    "--face-weight", options.face_weight or 0.25,
+    "--face-weight", options.face_weight or 0.50,
+    "--eye-blend", options.eye_blend or 0.65,
     "--tile", options.tile or 128,
   })
 end
