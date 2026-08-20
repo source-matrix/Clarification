@@ -11,8 +11,6 @@
 
 The reference implementation is written in Rust. Python can process images in-process through Pillow, while Go and Lua use the portable Clarification CLI. No image is uploaded and no remote service is required.
 
-![Clarification before and after](docs/assets/before-after.png)
-
 ### Before/after reference
 
 The repository also includes the user-provided reference pair used to calibrate the portrait-oriented profile:
@@ -30,6 +28,7 @@ See [`docs/assets/before-after/`](docs/assets/before-after/) for the image notes
 - [Highlights](#highlights)
 - [Architecture](#architecture)
 - [Installation](#installation)
+- [Optional AI backend](#optional-ai-backend)
 - [Quick start](#quick-start)
 - [Language support](#language-support)
 - [Options](#options)
@@ -51,6 +50,7 @@ See [`docs/assets/before-after/`](docs/assets/before-after/) for the image notes
 | Local-first | Processing happens on the machine that runs the library. |
 | Reproducible checks | A controlled fixture, unit tests, cross-language smoke tests, and CI are included. |
 | Portrait profile | `portrait` combines stronger detail enhancement with deterministic 4× Lanczos resizing. |
+| Optional AI backend | Real-ESRGAN + GFPGAN can be run explicitly with external model weights. |
 
 ## Architecture
 
@@ -80,7 +80,7 @@ The executable is available at `target/release/clarification`.
 python -m pip install -e bindings/python
 ```
 
-The Python binding requires Pillow and exposes `Options`, `clarify`, `clarify_file`, and `sharpness_score`.
+The Python binding requires Pillow and exposes `Options`, `clarify`, `clarify_file`, and `sharpness_score`. The optional AI backend is documented below and is not installed by default.
 
 ### Go
 
@@ -96,6 +96,23 @@ Import the package from its module path shown in [bindings/go/go.mod](bindings/g
 ### Lua
 
 Copy [bindings/lua/clarification.lua](bindings/lua/clarification.lua) into your Lua module path. The module uses `io.popen` and `os.execute` to invoke the CLI and requires a Lua runtime with those standard facilities enabled.
+
+## Optional AI backend
+
+For AI super-resolution and conservative face restoration, install the optional Python dependencies and keep model weights outside the repository:
+
+```bash
+python -m pip install -e './bindings/python[ai]'
+clarification-ai input.jpg output-ai.png \
+  --realesrgan-weights /models/RealESRGAN_x4plus.pth \
+  --gfpgan-weights /models/GFPGANv1.4.pth \
+  --face-weight 0.25 \
+  --tile 128
+```
+
+The Rust CLI exposes the same backend through `clarification ai`, while Go and Lua provide `EnhanceAI` and `enhance_ai`. The model weights are never downloaded implicitly or committed to the repository. The tested portrait setting is `face_weight=0.25`; higher weights can make the face look more polished but increase the risk of generated details and identity drift. Read [docs/guides/ai-backend.md](docs/guides/ai-backend.md) for installation, evaluation, and licensing notes.
+
+> The AI backend is a restoration model, not a forensic reconstruction system. Its generated eyelashes, hair strands, or iris texture must not be treated as guaranteed facts from the original image.
 
 ## Quick start
 
@@ -164,9 +181,9 @@ Runnable files for each language are in [`examples/`](examples). The concise wal
 | Language | Entry point | Processing model | Example |
 | --- | --- | --- | --- |
 | Rust | `clarification-core` and CLI | In-process core or CLI | [examples/rust](examples/rust) |
-| Python | `clarification` | In-process Pillow binding | [examples/python](examples/python) |
+| Python | `clarification` | In-process Pillow binding; optional AI backend | [examples/python](examples/python) |
 | Go | `clarification` | Typed CLI bridge | [examples/go](examples/go) |
-| Lua | `clarification.lua` | Lightweight CLI bridge | [examples/lua](examples/lua) |
+| Lua | `clarification.lua` | Lightweight CLI bridge, including optional AI runner | [examples/lua](examples/lua) |
 
 ## Options
 
@@ -180,6 +197,8 @@ Runnable files for each language are in [`examples/`](examples). The concise wal
 | `denoise` | `0.12` | Strength of isolated-speck reduction, from `0.0` to `1.0`. |
 | `skin-protection` | `0.25` | Protection for warm, low-gradient skin-like regions, from `0.0` to `1.0`. |
 | `--preset portrait` | — | Uses `radius=0.15`, `amount=6.0`, `contrast=10.0`, `threshold=1`, `denoise=0.02`, `skin-protection=0.72`, and `scale=4.0`. |
+| `face_weight` | `0.25` | Optional GFPGAN restoration blend; higher values increase face synthesis. |
+| `tile` | `128` | Optional AI tile size for bounded memory use. |
 
 The CLI accepts floating-point values for `radius`, `amount`, `contrast`, `scale`, `denoise`, and `skin-protection`, and clamps `threshold` to the valid byte range. Exact API names and signatures are documented in [docs/guides/api.md](docs/guides/api.md). For Python use `Options.portrait()`, for Go use `PortraitOptions()`, and for Lua use `clarification.portrait()`.
 
@@ -230,7 +249,7 @@ The controlled fixture in `tests/fixtures/input.png` produced a measurable local
 
 ## Performance and scope
 
-Clarification is designed as a compact local enhancement layer, not as a full super-resolution or forensic reconstruction system. Processing cost depends on image dimensions and codec behavior. For batch workloads, reuse the process where the language binding permits it, keep input/output formats explicit, and benchmark on representative images rather than relying on the fixture alone.
+Clarification provides a compact deterministic enhancement layer plus an optional AI super-resolution backend. The AI path is substantially heavier, depends on external model weights, and is not a forensic reconstruction system. Processing cost depends on image dimensions, tile size, model backend, and codec behavior. For batch workloads, benchmark on representative images rather than relying on the fixture alone.
 
 ## Contributing
 
