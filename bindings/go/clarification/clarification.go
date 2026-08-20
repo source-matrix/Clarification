@@ -68,6 +68,29 @@ func clamp01(value float32) float32 {
 	return value
 }
 
+// EnhanceAI runs the optional clarification-ai backend. The model weights remain
+// outside the Go package and are supplied explicitly by the caller.
+func EnhanceAI(command, input, output, realesrganWeights, gfpganWeights string, faceWeight float32, tile int) error {
+	if command == "" || input == "" || output == "" || realesrganWeights == "" || gfpganWeights == "" {
+		return fmt.Errorf("command, input, output, and model weights are required")
+	}
+	if tile < 0 {
+		tile = 0
+	}
+	args := []string{
+		input,
+		output,
+		"--realesrgan-weights", realesrganWeights,
+		"--gfpgan-weights", gfpganWeights,
+		"--face-weight", strconv.FormatFloat(float64(clamp01(faceWeight)), 'f', -1, 32),
+		"--tile", strconv.Itoa(tile),
+	}
+	if outputBytes, err := exec.Command(command, args...).CombinedOutput(); err != nil {
+		return fmt.Errorf("AI clarification failed: %w: %s", err, outputBytes)
+	}
+	return nil
+}
+
 // Score returns the CLI's local-detail score for an image.
 func Score(binary, input string) (float64, error) {
 	output, err := exec.Command(binary, "score", input).Output()
