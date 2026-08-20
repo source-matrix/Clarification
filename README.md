@@ -13,6 +13,16 @@ The reference implementation is written in Rust. Python can process images in-pr
 
 ![Clarification before and after](docs/assets/before-after.png)
 
+### Before/after reference
+
+The repository also includes the user-provided reference pair used to calibrate the portrait-oriented profile:
+
+| Before | After reference |
+| --- | --- |
+| ![Original input](docs/assets/before-after/before.jpeg) | ![Clarified reference](docs/assets/before-after/after.jpeg) |
+
+See [`docs/assets/before-after/`](docs/assets/before-after/) for the image notes and file details. The pair is a visual reference rather than pixel-perfect ground truth because the source and reference have different dimensions and JPEG encodings.
+
 > Clarification improves the presentation of captured pixels. It cannot recover detail that was never present in the source image, and its output should not be treated as the sole basis for safety-critical, legal, medical, or identity decisions.
 
 ## Contents
@@ -23,6 +33,7 @@ The reference implementation is written in Rust. Python can process images in-pr
 - [Quick start](#quick-start)
 - [Language support](#language-support)
 - [Options](#options)
+- [Before/after reference](#beforeafter-reference)
 - [Repository layout](#repository-layout)
 - [Testing and validation](#testing-and-validation)
 - [Performance and scope](#performance-and-scope)
@@ -39,6 +50,7 @@ The reference implementation is written in Rust. Python can process images in-pr
 | Safe defaults | Dimensions are preserved; alpha is restored after RGB enhancement. |
 | Local-first | Processing happens on the machine that runs the library. |
 | Reproducible checks | A controlled fixture, unit tests, cross-language smoke tests, and CI are included. |
+| Portrait profile | `portrait` combines stronger detail enhancement with deterministic 4× Lanczos resizing. |
 
 ## Architecture
 
@@ -98,6 +110,9 @@ clarification clarify input.png output.png \
 
 clarification score input.png
 clarification score output.png
+
+# Reference-style portrait enhancement: 4× output with tuned detail settings
+clarification clarify input.png portrait-output.png --preset portrait
 ```
 
 ### Rust
@@ -161,8 +176,14 @@ Runnable files for each language are in [`examples/`](examples). The concise wal
 | `amount` | `1.35` | Strength of detail enhancement. |
 | `contrast` | `8.0` | Percentage added to local contrast. |
 | `threshold` | `2` | Minimum local difference considered for sharpening. |
+| `scale` | `1.0` | Output scale; values above `1.0` use Lanczos resizing after enhancement. |
+| `--preset portrait` | — | Uses `radius=1.0`, `amount=1.65`, `contrast=5.0`, `threshold=1`, and `scale=4.0`. |
 
-The CLI accepts floating-point values for `radius`, `amount`, and `contrast`, and clamps `threshold` to the valid byte range. Exact API names and signatures are documented in [docs/guides/api.md](docs/guides/api.md).
+The CLI accepts floating-point values for `radius`, `amount`, `contrast`, and `scale`, and clamps `threshold` to the valid byte range. Exact API names and signatures are documented in [docs/guides/api.md](docs/guides/api.md). For Python use `Options.portrait()`, for Go use `PortraitOptions()`, and for Lua use `clarification.portrait()`.
+
+## Before/after reference
+
+The before/after pair in [`docs/assets/before-after/`](docs/assets/before-after/) is included as a reproducible visual reference for the portrait profile. It documents the desired direction of the result but does not claim that deterministic sharpening can reconstruct details absent from a low-resolution input.
 
 ## Repository layout
 
@@ -180,6 +201,7 @@ Clarification/
 ├── tests/                        # Fixtures, unit tests, and smoke tests
 ├── docs/
 │   ├── assets/                   # Architecture and before/after visuals
+│   │   └── before-after/          # User-provided portrait reference pair
 │   └── guides/                   # API, architecture, validation, and quick start
 ├── scripts/                      # Reproducible documentation-asset generation
 ├── Cargo.toml

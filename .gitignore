@@ -11,9 +11,10 @@ __pycache__/
 
 # Generated images and local binaries
 *.png
-!docs/assets/*.png
+!docs/assets/**/*.png
 *.jpg
 *.jpeg
+!docs/assets/**/*.jpeg
 *.webp
 clarification
 clarification.exe
