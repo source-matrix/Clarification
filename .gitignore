@@ -1,0 +1,23 @@
+# Rust
+/target
+Cargo.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# Generated images and local binaries
+*.png
+*.jpg
+*.jpeg
+*.webp
+clarification
+clarification.exe
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store

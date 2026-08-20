@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clarification-image"
+version = "0.1.0"
+description = "Practical image clarification and detail enhancement"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "Clarification contributors"}]
+dependencies = ["Pillow>=9.0"]
+
+[project.scripts]
+clarification-py = "clarification.__main__:main"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+
+[tool.setuptools.packages.find]
+where = ["."]

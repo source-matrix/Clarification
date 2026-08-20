@@ -1,0 +1,11 @@
+[package]
+name = "clarification"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "CLI for the Clarification image enhancement engine."
+
+[dependencies]
+clarification-core = { path = "../clarification-core" }
+image.workspace = true
