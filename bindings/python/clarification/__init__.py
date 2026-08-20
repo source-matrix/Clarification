@@ -11,6 +11,8 @@ from typing import Union
 
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
+from .ai import AIOptions, clarify_ai_file
+
 ImageLike = Union[Image.Image, str, Path]
 
 
@@ -122,5 +124,12 @@ def sharpness_score(image: ImageLike) -> float:
             image.close()
 
 
-__all__ = ["Options", "clarify", "clarify_file", "sharpness_score"]
+__all__ = [
+    "Options",
+    "AIOptions",
+    "clarify",
+    "clarify_file",
+    "clarify_ai_file",
+    "sharpness_score",
+]
 __version__ = "0.1.0"
