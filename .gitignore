@@ -11,6 +11,7 @@ __pycache__/
 
 # Generated images and local binaries
 *.png
+!docs/assets/*.png
 *.jpg
 *.jpeg
 *.webp
