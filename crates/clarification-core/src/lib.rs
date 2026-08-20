@@ -16,6 +16,8 @@ pub struct ClarificationOptions {
     pub contrast: f32,
     /// Ignore tiny differences below this luminance threshold.
     pub threshold: u8,
+    /// Optional output scale. Values at or below 1.0 keep the input dimensions.
+    pub scale: f32,
 }
 
 impl Default for ClarificationOptions {
@@ -25,11 +27,25 @@ impl Default for ClarificationOptions {
             amount: 1.35,
             contrast: 8.0,
             threshold: 2,
+            scale: 1.0,
         }
     }
 }
 
-/// Clarify an image using a deterministic unsharp-mask and contrast pipeline.
+impl ClarificationOptions {
+    /// A portrait-oriented profile that combines stronger detail recovery with 4× output scaling.
+    pub fn portrait() -> Self {
+        Self {
+            radius: 1.0,
+            amount: 1.65,
+            contrast: 5.0,
+            threshold: 1,
+            scale: 4.0,
+        }
+    }
+}
+
+/// Clarify an image using a deterministic unsharp-mask, contrast, and optional resize pipeline.
 pub fn clarify(image: &DynamicImage, options: ClarificationOptions) -> DynamicImage {
     let rgba = image.to_rgba8();
     let (width, height) = rgba.dimensions();
@@ -58,7 +74,19 @@ pub fn clarify(image: &DynamicImage, options: ClarificationOptions) -> DynamicIm
         Rgba(channels)
     });
 
-    DynamicImage::ImageRgba8(output)
+    let clarified = DynamicImage::ImageRgba8(output);
+    let scale = options.scale.max(1.0);
+    if scale <= 1.0 {
+        return clarified;
+    }
+
+    let target_width = ((width as f32) * scale).round().max(1.0) as u32;
+    let target_height = ((height as f32) * scale).round().max(1.0) as u32;
+    clarified.resize_exact(
+        target_width,
+        target_height,
+        image::imageops::FilterType::Lanczos3,
+    )
 }
 
 /// Return a simple sharpness proxy based on average horizontal/vertical luminance difference.
