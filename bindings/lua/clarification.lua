@@ -58,6 +58,18 @@ function M.enhance(binary, input, output, options)
   })
 end
 
+function M.enhance_ai(command_name, input, output, realesrgan_weights, gfpgan_weights, options)
+  options = options or {}
+  return command(command_name or "clarification-ai", {
+    input,
+    output,
+    "--realesrgan-weights", realesrgan_weights,
+    "--gfpgan-weights", gfpgan_weights,
+    "--face-weight", options.face_weight or 0.25,
+    "--tile", options.tile or 128,
+  })
+end
+
 function M.score(binary, input)
   local output, err = command(binary or "clarification", { "score", input })
   if not output then return nil, err end
