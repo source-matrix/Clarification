@@ -4,9 +4,13 @@ use std::{env, process};
 
 fn usage() -> ! {
     eprintln!(
-        "Usage:\n  clarification clarify <input> <output> [--radius N] [--amount N] [--contrast N] [--threshold N]\n  clarification score <input>"
+        "Usage:\n  clarification clarify <input> <output> [--preset portrait] [--scale N] [--radius N] [--amount N] [--contrast N] [--threshold N]\n  clarification score <input>"
     );
     process::exit(2);
+}
+
+fn has_flag(args: &[String], flag: &str) -> bool {
+    args.iter().any(|arg| arg == flag)
 }
 
 fn value(args: &[String], flag: &str, default: f32) -> f32 {
@@ -29,12 +33,21 @@ fn main() {
             }
             let input = &args[2];
             let output = &args[3];
-            let options = ClarificationOptions {
-                radius: value(&args, "--radius", 1.2),
-                amount: value(&args, "--amount", 1.35),
-                contrast: value(&args, "--contrast", 8.0),
-                threshold: value(&args, "--threshold", 2.0).clamp(0.0, 255.0) as u8,
+            let mut options = if has_flag(&args, "--preset")
+                && args
+                    .windows(2)
+                    .any(|pair| pair[0] == "--preset" && pair[1] == "portrait")
+            {
+                ClarificationOptions::portrait()
+            } else {
+                ClarificationOptions::default()
             };
+            options.radius = value(&args, "--radius", options.radius);
+            options.amount = value(&args, "--amount", options.amount);
+            options.contrast = value(&args, "--contrast", options.contrast);
+            options.threshold =
+                value(&args, "--threshold", options.threshold as f32).clamp(0.0, 255.0) as u8;
+            options.scale = value(&args, "--scale", options.scale).max(1.0);
             let image = ImageReader::open(input)
                 .unwrap_or_else(|e| fatal(&format!("cannot open input: {e}")))
                 .decode()
