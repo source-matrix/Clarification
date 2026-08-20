@@ -32,3 +32,7 @@
 تؤكد صفحة DIV2K الرسمية أن المجموعة تتكون من 1000 صورة عالية الدقة موزعة إلى 800 تدريب و100 تحقق و100 اختبار، مع أزواج HR/LR لعوامل التصغير [1]. ستُستخدم عينات التحقق محليًا فقط إذا نُزّلت، ولن تُنسخ ملفات الصور إلى المستودع العام. نتائج DIV2K تقيس جودة super-resolution العامة، لكنها لا تثبت وحدها جودة ترميم الوجوه.
 
 [1]: https://data.vision.ee.ethz.ch/cvl/DIV2K/ "صفحة DIV2K الرسمية"
+
+## تصحيح روابط الأوزان
+
+الرابط القديم لإصدار Real-ESRGAN أعاد 404. صفحة المستودع الرسمي الحالية تشير إلى تنزيل `RealESRGAN_x4plus.pth` من إصدار `v0.1.0`: https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth. كما أن صفحة GFPGAN الرسمية تشير إلى روابط الأوزان من مستودع TencentARC: https://github.com/TencentARC/GFPGAN/releases، وتبقى الأوزان خارج مستودع Clarification. تمت مراجعة هذه الروابط في 20 أغسطس 2026.
