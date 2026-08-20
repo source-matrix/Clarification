@@ -68,9 +68,14 @@ func clamp01(value float32) float32 {
 	return value
 }
 
-// EnhanceAI runs the optional clarification-ai backend. The model weights remain
-// outside the Go package and are supplied explicitly by the caller.
+// EnhanceAI runs the optional clarification-ai backend with the portrait eye-detail profile.
+// The model weights remain outside the Go package and are supplied explicitly by the caller.
 func EnhanceAI(command, input, output, realesrganWeights, gfpganWeights string, faceWeight float32, tile int) error {
+	return EnhanceAIWithEyeBlend(command, input, output, realesrganWeights, gfpganWeights, faceWeight, 0.65, tile)
+}
+
+// EnhanceAIWithEyeBlend exposes the conservative eye-detail blend used by portrait.
+func EnhanceAIWithEyeBlend(command, input, output, realesrganWeights, gfpganWeights string, faceWeight, eyeBlend float32, tile int) error {
 	if command == "" || input == "" || output == "" || realesrganWeights == "" || gfpganWeights == "" {
 		return fmt.Errorf("command, input, output, and model weights are required")
 	}
@@ -83,6 +88,7 @@ func EnhanceAI(command, input, output, realesrganWeights, gfpganWeights string, 
 		"--realesrgan-weights", realesrganWeights,
 		"--gfpgan-weights", gfpganWeights,
 		"--face-weight", strconv.FormatFloat(float64(clamp01(faceWeight)), 'f', -1, 32),
+		"--eye-blend", strconv.FormatFloat(float64(clamp01(eyeBlend)), 'f', -1, 32),
 		"--tile", strconv.Itoa(tile),
 	}
 	if outputBytes, err := exec.Command(command, args...).CombinedOutput(); err != nil {
