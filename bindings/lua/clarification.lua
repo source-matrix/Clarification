@@ -21,7 +21,27 @@ local function command(binary, args)
 end
 
 function M.defaults()
-  return { radius = 1.2, amount = 1.35, contrast = 8.0, threshold = 2 }
+  return {
+    radius = 1.2,
+    amount = 1.35,
+    contrast = 8.0,
+    threshold = 2,
+    scale = 1.0,
+    denoise = 0.12,
+    skin_protection = 0.25,
+  }
+end
+
+function M.portrait()
+  return {
+    radius = 0.15,
+    amount = 6.0,
+    contrast = 10.0,
+    threshold = 1,
+    scale = 4.0,
+    denoise = 0.02,
+    skin_protection = 0.72,
+  }
 end
 
 function M.enhance(binary, input, output, options)
@@ -32,6 +52,9 @@ function M.enhance(binary, input, output, options)
     "--amount", options.amount,
     "--contrast", options.contrast,
     "--threshold", options.threshold,
+    "--scale", options.scale or 1.0,
+    "--denoise", options.denoise or 0.12,
+    "--skin-protection", options.skin_protection or 0.25,
   })
 end
 
