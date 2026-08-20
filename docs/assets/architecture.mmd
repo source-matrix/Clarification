@@ -1,0 +1,16 @@
+flowchart LR
+    A[Input image\nPNG/JPEG] --> B[Language API]
+    B --> B1[Rust]
+    B --> B2[Python]
+    B --> B3[Go]
+    B --> B4[Lua]
+    B1 --> C[Clarification CLI / Core]
+    B2 --> C
+    B3 --> C
+    B4 --> C
+    C --> D[Normalize pixels]
+    D --> E[Local contrast]
+    E --> F[Unsharp detail enhancement]
+    F --> G[Preserve dimensions and alpha]
+    G --> H[Output image]
+    C --> I[Detail score]

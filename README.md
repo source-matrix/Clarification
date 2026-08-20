@@ -1,164 +1,225 @@
 # Clarification
 
-**Clarification** is an open-source, deterministic image clarification toolkit designed to make soft or low-contrast images easier to inspect. It combines a CPU-only unsharp-mask pipeline with contrast normalization and exposes the same core concepts through Rust, Go, Python, and Lua.
+[![CI](https://github.com/source-matrix/Clarification/actions/workflows/ci.yml/badge.svg)](https://github.com/source-matrix/Clarification/actions/workflows/ci.yml)
+[![Rust](https://img.shields.io/badge/core-Rust-orange?logo=rust)](https://www.rust-lang.org/)
+[![Python](https://img.shields.io/badge/binding-Python-3776AB?logo=python&logoColor=white)](bindings/python)
+[![Go](https://img.shields.io/badge/binding-Go-00ADD8?logo=go&logoColor=white)](bindings/go)
+[![Lua](https://img.shields.io/badge/binding-Lua-2C2D72?logo=lua&logoColor=white)](bindings/lua)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-> **ملخص بالعربية:** Clarification مكتبة مفتوحة المصدر لتوضيح الصور وتحسين التفاصيل الدقيقة، مع نواة Rust وواجهات موحدة لـ Rust وGo وPython وLua، وأداة سطر أوامر مناسبة للأتمتة.
+**Clarification is a local, cross-language image enhancement toolkit for making soft edges and low-contrast details easier to inspect.** It combines controlled local contrast, unsharp detail enhancement, alpha preservation, and a small comparison score behind one organized project.
 
-## Why Clarification?
+The reference implementation is written in Rust. Python can process images in-process through Pillow, while Go and Lua use the portable Clarification CLI. No image is uploaded and no remote service is required.
 
-The project focuses on predictable enhancement rather than generative reconstruction. It does not invent pixels or claim to recover information that is absent from the source image. Instead, it applies a controlled local-detail pass, preserves alpha transparency, and provides a lightweight sharpness score for before/after comparisons.
+![Clarification before and after](docs/assets/before-after.png)
 
-| Capability | Status |
-|---|---|
-| Rust core library | Available |
-| Cross-platform CLI | Available |
-| Python binding with Pillow | Available |
-| Go binding through the official CLI | Available |
-| Lua binding through the official CLI | Available |
-| PNG, JPEG, GIF, BMP, WebP, ICO, PNM, and QOI | Supported by the Rust CLI build |
-| Deterministic CPU processing | Available |
-| Alpha-channel preservation | Available |
-| Unit tests and CI | Included |
+> Clarification improves the presentation of captured pixels. It cannot recover detail that was never present in the source image, and its output should not be treated as the sole basis for safety-critical, legal, medical, or identity decisions.
+
+## Contents
+
+- [Highlights](#highlights)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Language support](#language-support)
+- [Options](#options)
+- [Repository layout](#repository-layout)
+- [Testing and validation](#testing-and-validation)
+- [Performance and scope](#performance-and-scope)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Highlights
+
+| Capability | Description |
+| --- | --- |
+| Shared core | Rust implementation with a small, explicit `ClarificationOptions` contract. |
+| Four entry points | Direct Rust API, Python/Pillow, Go bridge, and Lua bridge. |
+| Practical CLI | `clarify` processes an image; `score` reports a lightweight local-detail metric. |
+| Safe defaults | Dimensions are preserved; alpha is restored after RGB enhancement. |
+| Local-first | Processing happens on the machine that runs the library. |
+| Reproducible checks | A controlled fixture, unit tests, cross-language smoke tests, and CI are included. |
 
 ## Architecture
 
-The repository is intentionally layered. `clarification-core` contains the image algorithm and scoring function. The `clarification` binary provides a stable process boundary for automation. The Python binding offers an in-process Pillow implementation for Python applications, while Go and Lua bindings call the same CLI so they can remain dependency-light and easy to deploy.
+The same conceptual pipeline is available from every language entry point:
 
-```text
-Rust applications ───────┐
-                         │
-Python applications ─────┼── Clarification API
-                         │
-Go applications ─────────┼── clarification CLI ── clarification-core
-                         │
-Lua applications ────────┘
-```
+![Clarification architecture](docs/assets/architecture.png)
 
-## Rust installation and usage
+The Rust CLI and core are the compatibility reference. Python avoids a subprocess by using Pillow, while Go and Lua intentionally keep a thin bridge to the CLI so they do not need to duplicate codec and enhancement logic.
 
-Install the CLI from source:
+For the longer design explanation, read [docs/guides/architecture.md](docs/guides/architecture.md).
+
+## Installation
+
+### Rust CLI and core
+
+Build the workspace with the stable Rust toolchain supported by the project:
 
 ```bash
-cargo install --path crates/clarification-cli
+cargo build --release
 ```
 
-Clarify an image:
+The executable is available at `target/release/clarification`.
 
-```bash
-clarification clarify input.png clarified.png \
-  --radius 1.2 \
-  --amount 1.35 \
-  --contrast 8 \
-  --threshold 2
-```
-
-Measure local detail:
-
-```bash
-clarification score input.png
-clarification score clarified.png
-```
-
-Use the Rust library directly:
-
-```rust
-use clarification_core::{clarify, ClarificationOptions};
-use image::io::Reader as ImageReader;
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let source = ImageReader::open("input.png")?.decode()?;
-    let enhanced = clarify(&source, ClarificationOptions::default());
-    enhanced.save("clarified.png")?;
-    Ok(())
-}
-```
-
-## Python
-
-The Python package requires Python 3.9+ and Pillow:
+### Python
 
 ```bash
 python -m pip install -e bindings/python
 ```
 
-```python
-from clarification import Options, clarify_file, sharpness_score
+The Python binding requires Pillow and exposes `Options`, `clarify`, `clarify_file`, and `sharpness_score`.
 
-before = sharpness_score("input.png")
-clarify_file("input.png", "clarified.png", Options(amount=1.5, contrast=10.0))
-after = sharpness_score("clarified.png")
-print(f"detail score: {before:.4f} -> {after:.4f}")
-```
+### Go
 
-The Python command-line interface is also available:
+The Go package is a local bridge and has no third-party dependency:
 
 ```bash
-python -m clarification clarify input.png clarified.png --amount 1.5 --contrast 10
+cd bindings/go
+go test ./...
 ```
 
-## Go
+Import the package from its module path shown in [bindings/go/go.mod](bindings/go/go.mod), then provide the path to a built Clarification binary.
 
-The Go binding keeps the application dependency-light by invoking the official CLI:
+### Lua
 
-```go
-options := clarification.DefaultOptions()
-err := clarification.Enhance("clarification", "input.png", "clarified.png", options)
-if err != nil {
-    panic(err)
+Copy [bindings/lua/clarification.lua](bindings/lua/clarification.lua) into your Lua module path. The module uses `io.popen` and `os.execute` to invoke the CLI and requires a Lua runtime with those standard facilities enabled.
+
+## Quick start
+
+### CLI
+
+```bash
+clarification clarify input.png output.png \
+  --radius 1.2 \
+  --amount 1.35 \
+  --contrast 8 \
+  --threshold 2
+
+clarification score input.png
+clarification score output.png
+```
+
+### Rust
+
+```rust
+use clarification_core::{clarify, ClarificationOptions};
+use image::ImageReader;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let source = ImageReader::open("input.png")?.decode()?;
+    let output = clarify(&source, ClarificationOptions::default());
+    output.save("output.png")?;
+    Ok(())
 }
 ```
 
-See `examples/go/main.go` for a complete program.
+### Python
 
-## Lua
+```python
+from clarification import Options, clarify_file, sharpness_score
 
-Copy `bindings/lua/clarification.lua` into your Lua module path:
+options = Options(amount=1.5, contrast=10.0)
+clarify_file("input.png", "output.png", options)
+print(f"detail score: {sharpness_score('output.png'):.4f}")
+```
+
+### Go
+
+```go
+options := clarification.DefaultOptions()
+err := clarification.Enhance("target/release/clarification", "input.png", "output.png", options)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+### Lua
 
 ```lua
 local clarification = require("clarification")
-local options = clarification.defaults()
-options.amount = 1.5
-local output, err = clarification.enhance("clarification", "input.png", "clarified.png", options)
+local output, err = clarification.enhance("target/release/clarification", "input.png", "output.png", clarification.defaults())
 assert(output, err)
 ```
 
-## Parameter guide
+Runnable files for each language are in [`examples/`](examples). The concise walkthrough is also available in [docs/guides/quickstart.md](docs/guides/quickstart.md).
 
-| Parameter | Meaning | Typical range | Default |
-|---|---|---:|---:|
-| `radius` | Radius of the local blur used by unsharp masking | `0.5`–`3.0` | `1.2` |
-| `amount` | Strength of recovered local detail | `0.5`–`2.5` | `1.35` |
-| `contrast` | Contrast adjustment in percentage points | `0`–`25` | `8` |
-| `threshold` | Minimum difference treated as detail | `0`–`20` | `2` |
+## Language support
 
-For text, line art, and scanned documents, start with a lower `radius` and a moderate `amount`. For low-contrast photographs, increase `contrast` gradually. Strong settings can create halos, so visual inspection is always recommended.
+| Language | Entry point | Processing model | Example |
+| --- | --- | --- | --- |
+| Rust | `clarification-core` and CLI | In-process core or CLI | [examples/rust](examples/rust) |
+| Python | `clarification` | In-process Pillow binding | [examples/python](examples/python) |
+| Go | `clarification` | Typed CLI bridge | [examples/go](examples/go) |
+| Lua | `clarification.lua` | Lightweight CLI bridge | [examples/lua](examples/lua) |
 
-## Development
+## Options
 
-Run the complete Rust test suite:
+| Option | Default | Meaning |
+| --- | ---: | --- |
+| `radius` | `1.2` | Radius used by the unsharp detail pass. |
+| `amount` | `1.35` | Strength of detail enhancement. |
+| `contrast` | `8.0` | Percentage added to local contrast. |
+| `threshold` | `2` | Minimum local difference considered for sharpening. |
+
+The CLI accepts floating-point values for `radius`, `amount`, and `contrast`, and clamps `threshold` to the valid byte range. Exact API names and signatures are documented in [docs/guides/api.md](docs/guides/api.md).
+
+## Repository layout
+
+```text
+Clarification/
+├── .github/workflows/ci.yml      # Cross-language CI
+├── crates/
+│   ├── clarification-core/       # Rust image-processing core
+│   └── clarification-cli/        # `clarify` and `score` commands
+├── bindings/
+│   ├── python/                   # Pillow binding and Python module CLI
+│   ├── go/                       # Typed Go CLI bridge
+│   └── lua/                      # Lua module bridge
+├── examples/                     # Runnable Rust, Python, Go, and Lua examples
+├── tests/                        # Fixtures, unit tests, and smoke tests
+├── docs/
+│   ├── assets/                   # Architecture and before/after visuals
+│   └── guides/                   # API, architecture, validation, and quick start
+├── scripts/                      # Reproducible documentation-asset generation
+├── Cargo.toml
+├── README.md
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── SECURITY.md
+└── LICENSE
+```
+
+## Testing and validation
+
+Run the complete local checks:
 
 ```bash
+cargo fmt --all -- --check
 cargo test --workspace
+PYTHONPATH=bindings/python python -m unittest discover -s tests/python -v
+(cd bindings/go && test -z "$(gofmt -l .)" && go test ./...)
+LUA_PATH="$(pwd)/bindings/lua/?.lua;;" lua5.4 tests/lua_smoke.lua
 ```
 
-Run Python tests after installing the package:
+The controlled fixture in `tests/fixtures/input.png` produced a measurable local-detail increase in the release CLI validation. See [docs/guides/validation.md](docs/guides/validation.md) for the recorded result and its limitations.
 
-```bash
-python -m pytest tests/python
-```
+## Performance and scope
 
-Build the release CLI:
+Clarification is designed as a compact local enhancement layer, not as a full super-resolution or forensic reconstruction system. Processing cost depends on image dimensions and codec behavior. For batch workloads, reuse the process where the language binding permits it, keep input/output formats explicit, and benchmark on representative images rather than relying on the fixture alone.
 
-```bash
-cargo build --release -p clarification
-```
+## Contributing
 
-The project includes a GitHub Actions workflow that checks Rust formatting, Rust tests, Python tests, and Go formatting/build validation.
-
-## Limitations and responsible use
-
-Clarification is an enhancement tool, not a forensic recovery system. Sharpening can improve legibility but cannot restore detail that was never captured. Avoid using a processed image as the sole basis for safety-critical, legal, medical, or identity decisions.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. New operations should document their effect on edges, color, alpha, memory, and runtime behavior, and should include a regression test.
 
 ## License
 
-Clarification is released under the MIT License. See [LICENSE](LICENSE) for the complete text.
+Clarification is released under the [MIT License](LICENSE).
+
+## Project structure inspiration
+
+The navigation-first README organization, quick-start emphasis, architecture section, examples-first presentation, and explicit limitations are inspired by the public structure of [FLEX-GHOST/rusttgcalls][1]. Clarification does not copy its text, code, branding, or domain-specific implementation.
+
+## References
+
+[1]: https://github.com/FLEX-GHOST/rusttgcalls "FLEX-GHOST/rusttgcalls"
