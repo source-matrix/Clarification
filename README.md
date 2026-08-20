@@ -111,7 +111,7 @@ clarification clarify input.png output.png \
 clarification score input.png
 clarification score output.png
 
-# Reference-style portrait enhancement: 4× output with tuned detail settings
+# Portrait enhancement: 4× output with tuned detail settings
 clarification clarify input.png portrait-output.png --preset portrait
 ```
 
@@ -176,10 +176,12 @@ Runnable files for each language are in [`examples/`](examples). The concise wal
 | `amount` | `1.35` | Strength of detail enhancement. |
 | `contrast` | `8.0` | Percentage added to local contrast. |
 | `threshold` | `2` | Minimum local difference considered for sharpening. |
-| `scale` | `1.0` | Output scale; values above `1.0` use Lanczos resizing after enhancement. |
-| `--preset portrait` | — | Uses `radius=1.0`, `amount=1.65`, `contrast=5.0`, `threshold=1`, and `scale=4.0`. |
+| `scale` | `1.0` | Output scale; values above `1.0` resize with Lanczos before the final detail pass. |
+| `denoise` | `0.12` | Strength of isolated-speck reduction, from `0.0` to `1.0`. |
+| `skin-protection` | `0.25` | Protection for warm, low-gradient skin-like regions, from `0.0` to `1.0`. |
+| `--preset portrait` | — | Uses `radius=0.15`, `amount=6.0`, `contrast=10.0`, `threshold=1`, `denoise=0.02`, `skin-protection=0.72`, and `scale=4.0`. |
 
-The CLI accepts floating-point values for `radius`, `amount`, `contrast`, and `scale`, and clamps `threshold` to the valid byte range. Exact API names and signatures are documented in [docs/guides/api.md](docs/guides/api.md). For Python use `Options.portrait()`, for Go use `PortraitOptions()`, and for Lua use `clarification.portrait()`.
+The CLI accepts floating-point values for `radius`, `amount`, `contrast`, `scale`, `denoise`, and `skin-protection`, and clamps `threshold` to the valid byte range. Exact API names and signatures are documented in [docs/guides/api.md](docs/guides/api.md). For Python use `Options.portrait()`, for Go use `PortraitOptions()`, and for Lua use `clarification.portrait()`.
 
 ## Before/after reference
 
@@ -238,10 +240,3 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. New opera
 
 Clarification is released under the [MIT License](LICENSE).
 
-## Project structure inspiration
-
-The navigation-first README organization, quick-start emphasis, architecture section, examples-first presentation, and explicit limitations are inspired by the public structure of [FLEX-GHOST/rusttgcalls][1]. Clarification does not copy its text, code, branding, or domain-specific implementation.
-
-## References
-
-[1]: https://github.com/FLEX-GHOST/rusttgcalls "FLEX-GHOST/rusttgcalls"
